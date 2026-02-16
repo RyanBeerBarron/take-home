@@ -24,22 +24,17 @@ public interface SigningAlgorithm {
         {
             try {
                 hmac256 = Mac.getInstance("HmacSHA256");
+                String key = Optional.ofNullable(getProperty("hmac.key"))
+                        .or(() -> Optional.ofNullable(getenv("HMAC_KEY")))
+                        .orElse(null);
+                if (key == null) {
+                    System.err.println(
+                            "No hmac secret key found. Try adding '-Dhmac.key=<MY-SECRET-KEY>' as an argument to add a system property. Or use the environment variable 'HMAC_KEY'");
+                    exit(1);
+                }
 
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e);
-            }
-
-            String key = Optional.ofNullable(getProperty("hmac.key"))
-                    .or(() -> Optional.ofNullable(getenv("HMAC_KEY")))
-                    .orElse(null);
-            if (key == null) {
-                System.err.println(
-                        "No hmac secret key found. Try adding '-Dhmac.key=<MY-SECRET-KEY>' as an argument to add a system property. Or use the environment variable 'HMAC_KEY'");
-                exit(1);
-            }
-            try {
                 hmac256.init(new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
-            } catch (InvalidKeyException e) {
+            } catch (NoSuchAlgorithmException | InvalidKeyException e) {
                 throw new RuntimeException(e);
             }
         }

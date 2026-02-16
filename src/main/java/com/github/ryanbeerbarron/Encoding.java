@@ -2,7 +2,8 @@ package com.github.ryanbeerbarron;
 
 import java.util.Base64;
 
-///   Usually an encoding would encode one string of bytes into another string of bytes, same for the decoding operation.
+///   Usually an encoding would encode one string of bytes into another string of bytes, same for the decoding
+// operation.
 ///   This allows chaining different encoding/decoding one after another.<p>
 ///
 ///   But for this assignment, since the goal is to produce a JSON, we need text.

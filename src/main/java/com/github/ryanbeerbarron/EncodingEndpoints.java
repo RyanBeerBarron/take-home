@@ -1,16 +1,16 @@
 package com.github.ryanbeerbarron;
 
+import static com.github.ryanbeerbarron.Api.*;
+
+import com.github.ryanbeerbarron.Encoding.EncodingException;
 import io.javalin.http.Context;
 import io.javalin.http.HttpStatus;
+import java.util.Optional;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.BinaryNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.node.StringNode;
-
-import java.util.Optional;
-
-import static com.github.ryanbeerbarron.Api.*;
 
 public class EncodingEndpoints {
 
@@ -21,7 +21,6 @@ public class EncodingEndpoints {
         }
 
         ctx.status(HttpStatus.OK).result(mapper.writeValueAsString(json));
-
     }
 
     public static void decrypt(Context ctx) throws InvalidJsonException {
@@ -37,8 +36,8 @@ public class EncodingEndpoints {
                                 try {
                                     yield Optional.of(encoding.decode(stringNode.stringValue()));
                                 }
-                                // CodecException means the input string being invalid base64
-                                catch (Encoding.EncodingException _) {
+                                // EncodingException means the input string is invalid base64
+                                catch (EncodingException _) {
                                     yield Optional.empty();
                                 }
                             }

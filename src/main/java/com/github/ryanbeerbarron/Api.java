@@ -1,9 +1,8 @@
 package com.github.ryanbeerbarron;
 
-import java.util.TreeMap;
-
 import io.javalin.*;
 import io.javalin.http.*;
+import java.util.TreeMap;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
@@ -18,20 +17,22 @@ public class Api {
                 .post("/decrypt", EncodingEndpoints::decrypt)
                 .post("/sign", SigningEndpoints::sign)
                 .post("/verify", SigningEndpoints::verify)
-                .exception(InvalidJsonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST).result("Could not parse body, reason: " + ex.getMessage()))
-                .exception(JacksonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST).result("Could not parse body, reason: " + ex.getMessage()))
+                .exception(InvalidJsonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST)
+                        .result("Could not parse body, reason: " + ex.getMessage()))
+                .exception(JacksonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST)
+                        .result("Could not parse body, reason: " + ex.getMessage()))
                 .start(8000);
     }
 
     // Globals
-    static final Encoding encoding;
-    static final SigningAlgorithm signer;
+    static final Encoding encoding = Encoding.base64;
+    static final SigningAlgorithm signer = SigningAlgorithm.hmac;
     static final JsonMapper mapper;
 
     static {
         mapper = JsonMapper.builder()
-                // Taken from stackoverflow
-                //
+                // To enforce keys being sorted inside a json object, override the default factory
+                // Pass one that uses `TreeMap` which sorts its keys.
                 .nodeFactory(new JsonNodeFactory() {
                     @Override
                     public ObjectNode objectNode() {
@@ -39,8 +40,6 @@ public class Api {
                     }
                 })
                 .build();
-        encoding = Encoding.base64;
-        signer = SigningAlgorithm.hmac;
     }
 
     public static class InvalidJsonException extends Exception {
@@ -48,6 +47,7 @@ public class Api {
             super(cause);
         }
     }
+
     public static JsonNode bodyAsJson(Context context) throws InvalidJsonException {
         try {
             return mapper.readTree(context.bodyAsBytes());
@@ -55,5 +55,4 @@ public class Api {
             throw new InvalidJsonException(e);
         }
     }
-
 }

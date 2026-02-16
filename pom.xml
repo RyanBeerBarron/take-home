@@ -1,77 +1,84 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.ryanbeerbarron</groupId>
   <artifactId>take-home-assignment</artifactId>
+  <version>1</version>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
   <name>take-home-assignment</name>
   <url>http://maven.apache.org</url>
   <dependencies>
-	<dependency>
-		<groupId>io.javalin</groupId>
-		<artifactId>javalin</artifactId>
-		<version>6.7.0</version>
-	</dependency>
-	<dependency>
-		<groupId>tools.jackson.core</groupId>
-		<artifactId>jackson-databind</artifactId>
-		<version>3.0.4</version>
-	</dependency>
-	<dependency>
-		<groupId>org.slf4j</groupId>
-		<artifactId>slf4j-simple</artifactId>
-		<version>2.0.17</version>
-	</dependency>
+    <dependency>
+      <groupId>io.javalin</groupId>
+      <artifactId>javalin</artifactId>
+      <version>6.7.0</version>
+    </dependency>
+    <dependency>
+      <groupId>tools.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>3.0.4</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <version>2.0.17</version>
+    </dependency>
   </dependencies>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.10.1</version>
-				<configuration>
-					<source>25</source>
-					<target>25</target>
-				</configuration>
-			</plugin>
-		<plugin>
-			  <groupId>org.apache.maven.plugins</groupId>
-			  <artifactId>maven-assembly-plugin</artifactId>
-			  <version>3.6.0</version>
-			  <configuration>
-				<archive>
-				  <manifest>
-					<mainClass>com.github.ryanbeerbarron.Api</mainClass>
-				  </manifest>
-				</archive>
-				<descriptorRefs>
-				  <descriptorRef>jar-with-dependencies</descriptorRef>
-				</descriptorRefs>
-			  </configuration>
-			  <executions>
-				<execution>
-				  <id>make-assembly</id>
-				  <phase>package</phase>
-				  <goals>
-					<goal>single</goal>
-				  </goals>
-				</execution>
-			  </executions>
-			</plugin>
-<plugin>
-  <groupId>com.diffplug.spotless</groupId>
-  <artifactId>spotless-maven-plugin</artifactId>
-  <version>3.2.1</version>
-  <configuration>
-    <java>
-	<palantirJavaFormat>
-	  <version>2.87.0</version>
-	  <style>PALANTIR</style>
-	</palantirJavaFormat>
-    </java>
-  </configuration>
-</plugin>
-		</plugins>
-	</build>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.10.1</version>
+        <configuration>
+          <source>25</source>
+          <target>25</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.1</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <phase>package</phase>
+            <configuration>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>com.github.ryanbeerbarron.Api</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>3.2.1</version>
+        <configuration>
+          <pom>
+            <sortPom/>
+          </pom>
+          <java>
+            <palantirJavaFormat>
+              <version>2.87.0</version>
+              <style>PALANTIR</style>
+            </palantirJavaFormat>
+          </java>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

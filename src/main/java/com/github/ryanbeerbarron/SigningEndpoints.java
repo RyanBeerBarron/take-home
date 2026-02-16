@@ -1,10 +1,10 @@
 package com.github.ryanbeerbarron;
 
+import static com.github.ryanbeerbarron.Api.*;
+
 import com.github.ryanbeerbarron.Encoding.EncodingException;
 import io.javalin.http.*;
 import tools.jackson.databind.JsonNode;
-
-import static com.github.ryanbeerbarron.Api.*;
 
 public class SigningEndpoints {
     record SignatureResponse(String signature) {}
@@ -20,10 +20,8 @@ public class SigningEndpoints {
     public static void verify(Context ctx) throws EncodingException {
         VerifyRequest request = mapper.readValue(ctx.bodyAsBytes(), VerifyRequest.class);
 
-        boolean signatureValid = signer.verify(
-                mapper.writeValueAsBytes(request.data), encoding.decode(request.signature));
+        boolean signatureValid =
+                signer.verify(mapper.writeValueAsBytes(request.data), encoding.decode(request.signature));
         ctx.status(signatureValid ? HttpStatus.NO_CONTENT : HttpStatus.BAD_REQUEST);
-
     }
-
 }
