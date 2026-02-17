@@ -12,7 +12,16 @@ import tools.jackson.databind.node.ObjectNode;
 public class Api {
 
     static void main() {
-        Javalin.create()
+        createServer().start(8000);
+    }
+
+    public static Javalin createServer() {
+        return createServer(null);
+    }
+
+    public static Javalin createServer(String secretKey) {
+        signer = new SigningAlgorithm.HmacSHA256(secretKey);
+        return Javalin.create()
                 .post("/encrypt", EncodingEndpoints::encrypt)
                 .post("/decrypt", EncodingEndpoints::decrypt)
                 .post("/sign", SigningEndpoints::sign)
@@ -20,17 +29,16 @@ public class Api {
                 .exception(InvalidJsonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST)
                         .result("Could not parse body, reason: " + ex.getMessage()))
                 .exception(JacksonException.class, (ex, ctx) -> ctx.status(HttpStatus.BAD_REQUEST)
-                        .result("Could not parse body, reason: " + ex.getMessage()))
-                .start(8000);
+                        .result("Could not parse body, reason: " + ex.getMessage()));
     }
 
     // Globals
     static final Encoding encoding = Encoding.base64;
-    static final SigningAlgorithm signer = SigningAlgorithm.hmac;
-    static final JsonMapper mapper;
+    static SigningAlgorithm signer;
+    static final JsonMapper mapper = createMapper();
 
-    static {
-        mapper = JsonMapper.builder()
+    public static JsonMapper createMapper() {
+        return JsonMapper.builder()
                 // To enforce keys being sorted inside a json object, override the default factory
                 // Pass one that uses `TreeMap` which sorts its keys.
                 .nodeFactory(new JsonNodeFactory() {
@@ -39,6 +47,7 @@ public class Api {
                         return new ObjectNode(this, new TreeMap<>());
                     }
                 })
+                .enable()
                 .build();
     }
 
