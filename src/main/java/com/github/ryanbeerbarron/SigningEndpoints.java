@@ -10,7 +10,7 @@ public class SigningEndpoints {
     record SignatureResponse(String signature) {}
 
     public static void sign(Context ctx) throws InvalidJsonException {
-        JsonNode body = bodyAsJson(ctx);
+        JsonNode body = bodyAsCanonicalJson(ctx);
         String signature = encoding.encode(signer.sign(mapper.writeValueAsBytes(body)));
         ctx.status(HttpStatus.OK).result(mapper.writeValueAsString(new SignatureResponse(signature)));
     }

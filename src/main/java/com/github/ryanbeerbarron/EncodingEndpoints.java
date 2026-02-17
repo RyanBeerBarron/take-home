@@ -15,7 +15,7 @@ import tools.jackson.databind.node.StringNode;
 public class EncodingEndpoints {
 
     public static void encrypt(Context ctx) throws InvalidJsonException {
-        JsonNode json = bodyAsJson(ctx);
+        JsonNode json = bodyAsCanonicalJson(ctx);
         if (json instanceof ObjectNode object) {
             object.forEachEntry((key, val) -> object.put(key, encoding.encode(mapper.writeValueAsBytes(val))));
         }
@@ -24,7 +24,7 @@ public class EncodingEndpoints {
     }
 
     public static void decrypt(Context ctx) throws InvalidJsonException {
-        JsonNode json = bodyAsJson(ctx);
+        JsonNode json = bodyAsCanonicalJson(ctx);
         if (json instanceof ObjectNode object) {
             object.forEachEntry((key, val) -> {
                 Optional<byte[]> decodedString =

@@ -3,6 +3,7 @@ package com.github.ryanbeerbarron;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.github.ryanbeerbarron.SigningEndpoints.SignatureResponse;
+import com.github.ryanbeerbarron.SigningEndpoints.VerifyRequest;
 import io.javalin.Javalin;
 import io.javalin.testtools.JavalinTest;
 import java.util.Map;
@@ -17,7 +18,7 @@ public class TakeHomeTest {
     static JsonMapper mapper = Api.createMapper();
     static String simpleJson = """
         {
-            "foo": "hello",
+            "foo": 0,
             "bar": "world",
             "baz": 1
         }
@@ -25,7 +26,7 @@ public class TakeHomeTest {
 
     static String semanticallyEquivalentJson = """
         {"bar": "world",
-                           "baz": 01, "foo": "hello"
+                           "baz": 1.0, "foo": -0
         }
         """;
     static String goodbyeJson = """
@@ -47,6 +48,36 @@ public class TakeHomeTest {
       }
     }
     """;
+
+    static String orderedKeys = """
+            {
+                "aObject" : {
+                    "aField": 10,
+                    "bField": "hello",
+                    "zField": false
+                },
+                "zObject": {
+                    "aField": 20,
+                    "bField": "world",
+                    "zField": true
+                }
+            }
+            """;
+
+    static String shuffledKeys = """
+            {
+                "zObject" : {
+                    "zField": true,
+                    "bField": "world",
+                    "aField": 20
+                },
+                "aObject": {
+                    "bField": "hello",
+                    "aField": 10,
+                    "zField": false
+                }
+            }
+            """;
 
     @Test
     public void encrypting_and_decrypting_should_yield_same_json() {
@@ -92,6 +123,15 @@ public class TakeHomeTest {
             assertEquals(200, response.code());
             body = response.body().string();
             SignatureResponse secondSignature = mapper.readValue(body, SignatureResponse.class);
+            assertEquals(firstSignature.signature(), secondSignature.signature());
+
+            response = client.post("/sign", orderedKeys);
+            assertEquals(200, response.code());
+            firstSignature = mapper.readValue(response.body().bytes(), SignatureResponse.class);
+
+            response = client.post("/sign", shuffledKeys);
+            assertEquals(200, response.code());
+            secondSignature = mapper.readValue(response.body().bytes(), SignatureResponse.class);
 
             assertEquals(firstSignature.signature(), secondSignature.signature());
         });
@@ -109,6 +149,34 @@ public class TakeHomeTest {
             SignatureResponse secondSignature = mapper.readValue(response.body().bytes(), SignatureResponse.class);
 
             assertNotEquals(firstSignature.signature(), secondSignature.signature());
+        });
+    }
+
+    @Test
+    public void verifying_same_payload_retuns_204() {
+        JavalinTest.test(createApp(), (_, client) -> {
+            Response response = client.post("/sign", simpleJson);
+            assertEquals(200, response.code());
+            SignatureResponse signature = mapper.readValue(response.body().bytes(), SignatureResponse.class);
+
+            var request = new VerifyRequest(signature.signature(), mapper.readTree(simpleJson));
+            int code =
+                    client.post("/verify", mapper.writeValueAsString(request)).code();
+            assertEquals(204, code);
+        });
+    }
+
+    @Test
+    public void verifying_different_payload_returns_400() {
+        JavalinTest.test(createApp(), (_, client) -> {
+            Response response = client.post("/sign", simpleJson);
+            assertEquals(200, response.code());
+            SignatureResponse signature = mapper.readValue(response.body().bytes(), SignatureResponse.class);
+
+            var request = new VerifyRequest(signature.signature(), mapper.readTree(goodbyeJson));
+            int code =
+                    client.post("/verify", mapper.writeValueAsString(request)).code();
+            assertEquals(400, code);
         });
     }
 

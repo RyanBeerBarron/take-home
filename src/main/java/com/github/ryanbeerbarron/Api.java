@@ -2,11 +2,15 @@ package com.github.ryanbeerbarron;
 
 import io.javalin.*;
 import io.javalin.http.*;
+import java.math.BigDecimal;
 import java.util.TreeMap;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.DecimalNode;
 import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.LongNode;
 import tools.jackson.databind.node.ObjectNode;
 
 public class Api {
@@ -47,7 +51,6 @@ public class Api {
                         return new ObjectNode(this, new TreeMap<>());
                     }
                 })
-                .enable()
                 .build();
     }
 
@@ -57,11 +60,44 @@ public class Api {
         }
     }
 
-    public static JsonNode bodyAsJson(Context context) throws InvalidJsonException {
+    ///  To ensure semantically equivalent JSON produce the same hash/signature/etc... We need to transform it into
+    ///  a canonical form.
+    ///
+    /// Per the [JSON Canonicalization Scheme RFC](https://www.rfc-editor.org/rfc/rfc8785), numbers need to have
+    // trailing zeroes removed.<p>
+    /// ##### For example:
+    /// * `-0` and `0` are the same.
+    /// * `1` and `1.0` are the same.
+    public static JsonNode bodyAsCanonicalJson(Context context) throws InvalidJsonException {
+        JsonNode root;
         try {
-            return mapper.readTree(context.bodyAsBytes());
+            root = mapper.readTree(context.bodyAsBytes());
         } catch (RuntimeException e) {
             throw new InvalidJsonException(e);
+        }
+
+        return normalizeNumbers(root);
+    }
+
+    public static JsonNode normalizeNumbers(JsonNode json) {
+        if (json instanceof ObjectNode object) {
+            object.propertyStream().forEach(entry -> {
+                object.set(entry.getKey(), normalizeNumbers(entry.getValue()));
+            });
+            return object;
+        } else if (json instanceof ArrayNode array) {
+            for (int i = 0; i < array.size(); i++) {
+                array.set(i, normalizeNumbers(array.get(i)));
+            }
+            return array;
+        } else if (json.isNumber()) {
+            BigDecimal decimal = json.decimalValue().stripTrailingZeros();
+            if (decimal.scale() <= 0) {
+                return LongNode.valueOf(decimal.longValue());
+            }
+            return DecimalNode.valueOf(decimal);
+        } else {
+            return json;
         }
     }
 }
